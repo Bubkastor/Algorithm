@@ -53,6 +53,7 @@ int SumPathCities(int start, int goal, ArrayRoads roads, ArrayCitys citys)
 		int vertex = queryTop.front();
 		queryTop.pop();
 		currentRoad = GetRoads(roads, vertex);
+
 		for (size_t i = 0; i < currentRoad.size(); i++)
 		{
 			if (!used[currentRoad[i].to])
