@@ -30,19 +30,22 @@ struct RoadTotalCost
 typedef vector<City> ArrayCitys;
 typedef vector<Road> ArrayRoads;
 typedef vector<RoadTotalCost> ArrayRoadsTotalCost;
-ArrayRoads GetRoads(ArrayRoads roads, int city, set<int> oldCity);
+Road GetRoad(ArrayRoads roads, int city, int to);
+ArrayRoads GetRoads(ArrayRoads roads, int city, set<int> old);
 ArrayRoads GetRoads(ArrayRoads roads, int city);
 
 int SumPathCities(int start, int goal, ArrayRoads roads, ArrayCitys citys) 
 {
 	int result = 0;
-	int currentCity = start;	
-	bool isFinding = false;
 
 	queue<int> queryTop;
 	queryTop.push(start);
 	vector<bool> used(citys.size());
 	used[start] = true;
+
+	vector<int> d(citys.size());
+	vector<int> p(citys.size());
+	p[start] = -1;
 
 	set<int> oldCity;
 	oldCity.insert(start);
@@ -60,44 +63,67 @@ int SumPathCities(int start, int goal, ArrayRoads roads, ArrayCitys citys)
 			{
 				used[currentRoad[i].to] = true;
 				queryTop.push(currentRoad[i].to);
+				d[currentRoad[i].to] = d[currentRoad[i].in] + 1;
+				p[currentRoad[i].to] = currentRoad[i].in;
 			}
 						
-		}		
-		currentRoad.clear();
-		for (auto it: oldCity)
-		{
-			auto newRoad = GetRoads(roads, it, oldCity);
-			currentRoad.insert(currentRoad.end(), newRoad.begin(), newRoad.end());
-		}
-		
+		}				
 	}
-	std::cout << "findid";
-
-	return 1;
-
 	
+	if (!used[goal])
+		cout << "No path!";
+	else {
+		vector<int> path;
+		for (int v = goal; v != -1; v = p[v])
+			path.push_back(v);
+
+		reverse(path.begin(), path.end());
+
+
+		for (size_t i = 1; i < path.size(); ++i)
+			result += GetRoad(roads, path[i - 1], path[i]).cost;
+			
+	}
+	return result;	
 }
 
-ArrayRoads GetRoads(ArrayRoads roads, int city, set<int> oldCity)
+Road GetRoad(ArrayRoads roads, int city, int to)
 {
 	ArrayRoads result = GetRoads(roads, city);
-	ArrayRoads newResult;
+	Road newResult;
 	for (size_t i = 0; i < result.size(); i++)
 	{
 		Road road = result[i];
-		bool add = true;
-		for (auto it: oldCity)
-			if (road.to == it)
-			{
-				add = false;
-				break;
-			}
-		if (add)
-			newResult.push_back(result[i]);
+		if (road.to == to)
+		{
+			newResult = road;
+			break;
+		}
 	}
 
 	return newResult;
 
+}
+ArrayRoads GetRoads(ArrayRoads roads, int city, set<int> old)
+{
+	auto arrayRoads = GetRoads(roads, city);
+	ArrayRoads result;
+	
+	for (auto road: arrayRoads)
+	{
+		bool add = true;
+		for (auto usedCity: old)
+		{
+			if (road.to == usedCity)
+			{
+				add = false;
+				break;
+			}			
+		}
+		if (add)
+			result.push_back(road);
+	}
+	return result;
 }
 
 ArrayRoads GetRoads(ArrayRoads roads, int city) {
@@ -124,13 +150,14 @@ vector<City> A(int start, int goal, ArrayRoads roads, ArrayCitys citys) {
 
 	ArrayRoadsTotalCost myPath;
 	ArrayRoadsTotalCost otherPath;
-	ArrayRoads allRoads;
+
+	set<int> usedCity;
+	usedCity.insert(start);
 	int beforeCost = 0;
 	int currentCity = start;
 
 	while (currentCity != goal) {
-		ArrayRoads currentRoad = GetRoads(roads, currentCity);
-		allRoads.insert(allRoads.end(), currentRoad.begin(), currentRoad.end());
+		ArrayRoads currentRoad = GetRoads(roads, currentCity, usedCity);
 
 		ArrayRoadsTotalCost currentRoadsTotlCost = GetTotalCostRoads(currentRoad, citys, beforeCost);
 
@@ -143,7 +170,7 @@ vector<City> A(int start, int goal, ArrayRoads roads, ArrayCitys citys) {
 
 		
 		
-		for(int i= 0; i < currentRoadsTotlCost.size(); i++)
+		for(size_t i= 0; i < currentRoadsTotlCost.size(); i++)
 		{
 			RoadTotalCost it = currentRoadsTotlCost[i];
 			if ((it.in == min_iterator.in)
@@ -165,7 +192,7 @@ vector<City> A(int start, int goal, ArrayRoads roads, ArrayCitys citys) {
 		if (min_before.totalCost < min_iterator.totalCost) {
 			otherPath.push_back(min_iterator);
 			min_iterator = min_before;
-			for (int i = 0; i < otherPath.size(); i++)
+			for (size_t i = 0; i < otherPath.size(); i++)
 			{
 				RoadTotalCost it = otherPath[i];
 				if ((it.in == min_iterator.in)
@@ -178,17 +205,15 @@ vector<City> A(int start, int goal, ArrayRoads roads, ArrayCitys citys) {
 			}
 		}
 		currentCity = min_iterator.to;
-		for (auto it : allRoads)
-			if ((it.in == min_iterator.in) && (it.to == min_iterator.to))
-				beforeCost += it.cost;
+		usedCity.insert(min_iterator.to);
+		beforeCost = SumPathCities(start, min_iterator.to, roads, citys);
+	
 		
-		std::cout << citys[min_iterator.in].name << "-" << citys[min_iterator.to].name << "-" << min_iterator.totalCost << endl;
-
+		std::cout <<  citys[min_iterator.to].name[0] << "-";
 		
 	}
 	std::cout << endl;
-	for (auto it : myPath)
-		std::cout << citys[it.in].name << "-" << citys[it.to].name << "-" << it.totalCost << endl;
+	
 	return vector<City>();
 }
 
@@ -240,9 +265,9 @@ void main()
 		{ 19, 0, 75 }, { 19, 12, 71 }
 	};
 
-	SumPathCities(0, 2, roads, citys);
-	//answer =  A(0, 1, roads, citys);
-
-
-
+	//cout << SumPathCities(0, 1, roads, citys);
+	int start = 0;
+	int goal = 1;
+	std::cout << citys[start].name[0] << "-";
+	A(start, goal, roads, citys);
 }
