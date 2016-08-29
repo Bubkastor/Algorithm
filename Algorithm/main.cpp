@@ -104,6 +104,7 @@ Road GetRoad(ArrayRoads roads, int city, int to)
 	return newResult;
 
 }
+
 ArrayRoads GetRoads(ArrayRoads roads, int city, set<int> old)
 {
 	auto arrayRoads = GetRoads(roads, city);
