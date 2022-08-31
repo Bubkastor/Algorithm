@@ -84,6 +84,9 @@ NodePath GetRoad(ArrayRoads roads, Node inNode, Node toNode)
 			result = road;
 			break;
 		}
+		if (road.toNode != toNode){
+			
+		}
 	}
 	return result;
 }
